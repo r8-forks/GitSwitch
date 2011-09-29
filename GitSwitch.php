@@ -12,7 +12,7 @@
  * @name GitSwitch.php
  * @author Jasper Valero <contact@jaspervalero.com>
  * @copyright Creative Commons 3.0 Attribution
- * @version 1.0
+ * @version 0.8
  * @link http://jaspervalero.com
  */
 header("Content-type: text/xml");
@@ -54,9 +54,9 @@ class GitSwitch
 		/**
 		 * The following properties are mandatory and must be set accurately in order for this script to work.
 		 */ 
-		$username = "jaspervalero"; // Repository owner's GitHub username i.e. "jaspervalero"
-		$repo = "GitSwitch"; // The name of the repository you want to export issues from i.e. "GitSwitch"
-		$requester = "Jasper Valero"; // Name that will display next to "requested" in PivotalTracker stories i.e. "Jasper Valero"
+		$username = ""; // Repository owner's GitHub username i.e. "jaspervalero"
+		$repo = ""; // The name of the repository you want to export issues from i.e. "GitSwitch"
+		$requester = ""; // Name that will display next to "requested" in PivotalTracker stories i.e. "Jasper Valero"
 		$state = "open"; // Imports either "open" (Default) or "closed" issues
 		
 		/**

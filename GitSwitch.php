@@ -47,48 +47,62 @@ class GitSwitch
 		 */
 		self::init();
 		
-		/****************************************************************************************
+		/***************************************************************************************
 	 	* EDIT THE FOLLOWING PROPERTIES TO INTEGRATE THIS SCRIPT WITH YOUR GITHUB REPOSITORY   *
 	 	***************************************************************************************/
 	
 		/**
 		 * The following properties are mandatory and must be set accurately in order for this script to work.
 		 */ 
-		$username = "jaspervalero"; // Repository owner's GitHub username.
-		$repo = "GitSwitch"; // The name of the repository you want to export issues from.
-		$requester = "Jasper Valero"; // Name that will display next to "requested" in PivotalTracker stories.
-		$state = "open"; // Imports either "open" or "closed" issues.
+		$username = "jaspervalero"; // Repository owner's GitHub username i.e. "jaspervalero"
+		$repo = "GitSwitch"; // The name of the repository you want to export issues from i.e. "GitSwitch"
+		$requester = "Jasper Valero"; // Name that will display next to "requested" in PivotalTracker stories i.e. "Jasper Valero"
+		$state = "open"; // Imports either "open" (Default) or "closed" issues
+		
+		/**
+		 * GitSwitch offers three import modes to CHOOSE from:
+		 * (1) "list"   = Imports all "open" or "closed" issues
+		 * (2) "label"  = Imports issues that have a certain label assigned in GitHub
+		 * (3) "search" = Imports issues that contain a certain keyword
+		 */
+		$mode = "list"; // "list" Default
+		$label = ""; // LEAVE BLANK unless mode is set to "label"
+		$keyword = ""; // LEAVE BLANK unless mode is set to "search" 
 	
-		/****************************************************************************************
+		/***************************************************************************************
 	 	* DO NOT EDIT BEYOND THIS LINE UNLESS YOU KNOW WHAT YOU ARE DOING                      *
 	 	***************************************************************************************/
 		
 		/**
-		 * Create request URL based on properties to fetch data from GitHub Issues API.
-		 * Format: http://github.com/api/v2/json/issues/list/:user/:repo/open
+		 * Create request URL based on properties and current mode to fetch data from GitHub Issues API.
 		 */
-		$requestURL = "http://github.com/api/v2/json/issues/list/" .  $username . "/" . $repo . "/" . $state;
+		// List Mode - Format: http://github.com/api/v2/json/issues/list/:user/:repo/open
+		if($mode == "list")
+		{
+			$requestURL = "http://github.com/api/v2/json/issues/list/" . $username . "/" . $repo . "/" . $state;
+		} // Label Mode - Format: http://github.com/api/v2/json/issues/list/:user/:repo/label/:label
+		  else if($mode == "label") {
+			$requestURL = "http://github.com/api/v2/json/issues/list/" . $username . "/" . $repo . "/label/" . $label;
+		} // Label Mode - Format: http://github.com/api/v2/json/issues/search/:user/:repo/:state/:search_term
+		  else if($mode == "search") {
+			$requestURL = "http://github.com/api/v2/json/issues/search/" . $username . "/" . $repo . "/" . $state . "/" . $keyword;	
+		}
 		
 		/**
-		 * Catch the JSON Data
+		 * Create array of issues returned from the API query
 		 */
-		$jsonData = file_get_contents($requestURL);
-		
-		/**
-		 * Create data array from JSON data
-		 */
-		$jsonArray = json_decode($jsonData, true);
+		$issuesArray = self::query($requestURL);
 		
 		/**
 		 * Parse JSON from array and format into PivotalTracker ready XML
 		 */
 		$xmlOutput = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 		$xmlOutput .= "<external_stories type=\"array\">\n";
-		foreach($jsonArray['issues'] as &$issue) {
+		foreach($issuesArray['issues'] as &$issue) {
 			$xmlOutput .= "	<external_story>\n";
 			$xmlOutput .= "		<external_id>" . $issue['number'] . "</external_id>\n";
-			$xmlOutput .= "		<name>" . $issue['title'] . "</name>\n";
-			$xmlOutput .= "		<description>" . $issue['body'] . $issue['html_url'] . "</description>\n";
+			$xmlOutput .= "		<name>BUG " . $issue['title'] . "</name>\n";
+			$xmlOutput .= "		<description>" . $issue['body'] . " GitHub URL: " . $issue['html_url'] . "</description>\n";
 			$xmlOutput .= "		<requested_by>" . $requester . "</requested_by>\n";
 			$xmlOutput .= "		<created_at type=\"datetime\">" . $issue['created_at'] . "</created_at>\n";
 			$xmlOutput .= "		<story_type>BUG</story_type>\n";
@@ -101,6 +115,29 @@ class GitSwitch
 		 * Output formatted XML to PivotalTracker
 		 */
 		echo $xmlOutput;
+	}
+
+	/**
+	 * Makes requests to the GitHub Issues API
+	 */
+	private static function query($url)
+	{
+		/**
+		 * Initializes the class.
+		 */
+		self::init();
+		
+		/**
+		 * Catch the JSON Data
+		 */
+		$jsonData = file_get_contents($url);
+		
+		/**
+		 * Create data array from JSON data
+		 */
+		$jsonArray = json_decode($jsonData, true);
+		
+		return $jsonArray;
 	}
 }
 

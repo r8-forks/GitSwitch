@@ -3,8 +3,11 @@
  * GitSwitch.php
  * 
  * This is a script for integrating GitHub issues with PivotalTracker. It allows a panel to be created in PivotalTracker
- * that will allow issues/bugs to be imported from GitHub.
- * Uses the GitHub API v2.
+ * that will allow issues/bugs to be imported from GitHub. Please note GitSwitch does not allow you to directly update 
+ * or modify issues in GitHub from PivotalTracker. It is currently export only GitHub --> PivotalTracker. If you would
+ * like to see update/modify functionality in a future release please contact me at contact@jaspervalero.com and let me know.
+ * 
+ * GitSwitch uses the GitHub API v2.
  * 
  * @name GitSwitch.php
  * @author Jasper Valero <contact@jaspervalero.com>
@@ -15,15 +18,15 @@
 header("Content-type: text/xml");
 
 /**
- * @static Switches GitHub Issues JSON into XML for integration with PivotalTracker.
+ * @static Switches GitHub Issues JSON into formatted XML for integration with PivotalTracker.
  */
 class GitSwitch 
-{
+{	
 	/**
-	 * Static var Boolean shows is class has been initialized.
+	 * Static var Boolean determines if class has been initialized.
 	 */
 	private static $initialized = FALSE;
- 	
+	
 	/**
 	 * @static Checks to see if the class has been initialized, if not it initializes it.
 	 */
@@ -44,39 +47,44 @@ class GitSwitch
 		 */
 		self::init();
 		
+		/****************************************************************************************
+	 	* EDIT THE FOLLOWING PROPERTIES TO INTEGRATE THIS SCRIPT WITH YOUR GITHUB REPOSITORY   *
+	 	***************************************************************************************/
+	
 		/**
-		 * Sets the request URL which returns JSON.
-		 * Format: http://github.com/api/v2/json/issues/list/:user/:repo/open
-		 * Change to your own username and repo.
-		 */
-		$request = "http://github.com/api/v2/json/issues/list/jaspervalero/OpenDonut/open";
+		 * The following properties are mandatory and must be set accurately in order for this script to work.
+		 */ 
+		$username = "jaspervalero"; // Repository owner's GitHub username.
+		$repo = "GitSwitch"; // The name of the repository you want to export issues from.
+		$requester = "Jasper Valero"; // Name that will display next to "requested" in PivotalTracker stories.
+		$state = "open"; // Imports either "open" or "closed" issues.
+	
+		/****************************************************************************************
+	 	* DO NOT EDIT BEYOND THIS LINE UNLESS YOU KNOW WHAT YOU ARE DOING                      *
+	 	***************************************************************************************/
 		
 		/**
-		 * Sets the name to show as the requester in PivotalTracker.
+		 * Create request URL based on properties to fetch data from GitHub Issues API.
+		 * Format: http://github.com/api/v2/json/issues/list/:user/:repo/open
 		 */
-		$requester = "Jasper Valero";
+		$requestURL = "http://github.com/api/v2/json/issues/list/" .  $username . "/" . $repo . "/" . $state;
 		
 		/**
 		 * Catch the JSON Data
 		 */
-		$jsonData = file_get_contents($request);
-		
-		/**
-		 * Create semantic variable name
-		 */
-		$issuesData = $jsonData;
+		$jsonData = file_get_contents($requestURL);
 		
 		/**
 		 * Create data array from JSON data
 		 */
-		$json_a = json_decode ($issuesData, true);
+		$jsonArray = json_decode($jsonData, true);
 		
 		/**
 		 * Parse JSON from array and format into PivotalTracker ready XML
 		 */
 		$xmlOutput = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 		$xmlOutput .= "<external_stories type=\"array\">\n";
-		foreach($json_a['issues'] as &$issue) {
+		foreach($jsonArray['issues'] as &$issue) {
 			$xmlOutput .= "	<external_story>\n";
 			$xmlOutput .= "		<external_id>" . $issue['number'] . "</external_id>\n";
 			$xmlOutput .= "		<name>" . $issue['title'] . "</name>\n";
@@ -90,7 +98,7 @@ class GitSwitch
 		$xmlOutput .= "</external_stories>";
 		
 		/**
-		 * Output formatted XML
+		 * Output formatted XML to PivotalTracker
 		 */
 		echo $xmlOutput;
 	}
